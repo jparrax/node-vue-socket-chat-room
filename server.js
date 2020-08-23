@@ -4,39 +4,37 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 3000;
 const socketio = require('socket.io');
-const mongo = require('mongodb').MongoClient
+let url = 'mongodb://127.0.0.1/mongochat';
+const mongo = require('mongodb').MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true })
 const io = socketio(server);
 
-app.use(express.static(__dirname + '/public/'));
-
-
-
-
-io.on('connection', socket => {
-
-  mongo.connect('mongodb://127.0.0.1/mongochat', function(err, db) {
-
+function findChats(chat, io){
+  chat.find().sort({_id:1}).toArray(function(err, res){
     if(err){
       throw err;
     }
+    io.emit('messages', res);
+    console.log('chats sent');
+  })
+}
 
-    console.log('Mongo connected...');
+app.use(express.static(__dirname + '/public/'));
 
-    console.log('New web socket created...');
+mongo.connect(function(err, db) {
+
+  if(err){
+    throw err;
+  }
+
+  console.log('Mongo connected...');
+
+  io.on('connection', socket => {
+
+    console.log("Is the user connected?, " + socket.connected + ".")
 
     let chat = db.db('mongochat').collection('chats');
 
-    findChats = function(){
-      chat.find().sort({_id:1}).toArray(function(err, res){
-        if(err){
-          throw err;
-        }
-
-        socket.emit('messages', res);
-      })
-    }
-
-    findChats();
+    findChats(chat, io);
 
     socket.on('input', function(data){
       let name = data.name;
@@ -45,18 +43,21 @@ io.on('connection', socket => {
       // Check for name and message
       if(name == '' || message == ''){
         // Send error status
-        console.log('Input no autorizado');
+        console.log('Not allowed input');
       }else {
         // Insert message
-        chat.insert({name: name, message: message}, function(){
-          findChats();
+        chat.insertOne({name: name, message: message}, function(){
+          console.log('Insert done');
+          findChats(chat, io);
+          // socket.emit("messages", [{name:'Bla', message: 'bla bla'}]);
         });
       }
-    });
-
+    })
+    
+    socket.on('disconnect', function(){
+      console.log('disconnected');
+    })
   });
-
 });
-
 
 server.listen(PORT, () => console.log('Example app listening at http://localhost:' + PORT));

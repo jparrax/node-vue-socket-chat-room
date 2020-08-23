@@ -1,6 +1,6 @@
 <template>
   <b-container>
-    <b-container class="messages-box">
+    <b-container id="messages" class="messages-box">
       <b-row>
         <b-col>Welcome to our room...</b-col>
       </b-row>
@@ -12,7 +12,15 @@
 </template>
 <script>
 export default {
-  props: ['messages']
+  props: ['messages'],
+  methods: {
+    scrollToBottom: function(element){
+      document.getElementById('messages').scrollTo(0,document.getElementById('messages').scrollHeight);
+    }
+  },
+  updated: function(){
+    this.scrollToBottom();
+  }
 }
 </script>
 <style scoped>

@@ -57,7 +57,7 @@ export default {
     messages: function(data){
       console.log('event triggered by the socket');
       this.messages = data;
-    }
+    },
   },
   mounted: function(){
     console.log('Component mounted');
