@@ -8,12 +8,12 @@ let url = 'mongodb://127.0.0.1/mongochat';
 const mongo = require('mongodb').MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true })
 const io = socketio(server);
 
-function findChats(chat, io){
+function findChats(chat, socket){
   chat.find().sort({_id:1}).toArray(function(err, res){
     if(err){
       throw err;
     }
-    io.emit('messages', res);
+    socket.emit('messages', res);
     console.log('chats sent');
   })
 }
@@ -34,7 +34,7 @@ mongo.connect(function(err, db) {
 
     let chat = db.db('mongochat').collection('chats');
 
-    findChats(chat, io);
+    findChats(chat, socket);
 
     socket.on('input', function(data){
       let name = data.name;
@@ -49,7 +49,6 @@ mongo.connect(function(err, db) {
         chat.insertOne({name: name, message: message}, function(){
           console.log('Insert done');
           findChats(chat, io);
-          // socket.emit("messages", [{name:'Bla', message: 'bla bla'}]);
         });
       }
     })
